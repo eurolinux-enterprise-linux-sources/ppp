@@ -1,7 +1,7 @@
 Summary: The Point-to-Point Protocol daemon
 Name: ppp
 Version: 2.4.5
-Release: 5%{?dist}
+Release: 10%{?dist}
 License: BSD and LGPLv2+ and GPLv2+ and Public Domain
 URL: http://www.samba.org/ppp
 Group: System Environment/Daemons
@@ -23,10 +23,15 @@ Patch19: ppp-2.4.3-local.patch
 Patch20: ppp-2.4.3-ipv6-accept-remote.patch
 Patch22: ppp-2.4.4-cbcp.patch
 Patch23: ppp-2.4.2-dontwriteetc.patch
+Patch24: 0015-pppd-move-pppd-database-to-var-run-ppp.patch
+Patch25: ppp-2.4.5-radius-config.patch
+Patch26: ppp-2.4.5-l2tp.patch
+Patch27: 0001-pppd-pass-arg-to-printer-callback.patch
+Patch28: 0002-pppol2tp-correctly-initialize-pppol2tp_fd_str.patch
 
 BuildRoot: %{_tmppath}/%{name}-root
 BuildRequires: pam-devel, libpcap-devel
-Requires: glibc >= 2.0.6, /etc/pam.d/system-auth, logrotate, libpcap >= 14:0.8.3-6
+Requires: glibc >= 2.0.6, /etc/pam.d/system-auth, libpcap >= 14:0.8.3-6
 
 %description
 The ppp package contains the PPP (Point-to-Point Protocol) daemon and
@@ -61,6 +66,11 @@ This package contains the header files for building plugins for ppp.
 %patch20 -p1 -b .ipv6cp
 %patch22 -p1 -b .cbcp
 %patch23 -p1 -b .dontwriteetc
+%patch24 -p1 -b .pppdb-access
+%patch25 -p1 -b .radius
+%patch26 -p1 -b .l2tp
+%patch27 -p1
+%patch28 -p1
 
 rm -f scripts/*.local
 rm -f scripts/*.change_resolv_conf
@@ -69,7 +79,7 @@ find . -type f -name "*.sample" | xargs rm -f
 
 %build
 #find . -name 'Makefile*' -print0 | xargs -0 perl -pi.no_strip -e "s: -s : :g"
-RPM_OPT_FLAGS="$RPM_OPT_FLAGS -fPIC -Wall"
+RPM_OPT_FLAGS="$RPM_OPT_FLAGS -fPIC -Wall -fno-strict-aliasing"
 %configure
 make
 
@@ -116,6 +126,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/ppp/options
 %config(noreplace) /etc/ppp/pap-secrets
 %config(noreplace) /etc/pam.d/ppp
+%dir %{_sysconfdir}/logrotate.d/
 %config(noreplace) /etc/logrotate.d/ppp
 %doc FAQ README README.cbcp README.linux README.MPPE README.MSCHAP80 README.MSCHAP81 README.pwfd README.pppoe scripts sample
 
@@ -125,6 +136,23 @@ rm -rf $RPM_BUILD_ROOT
 %doc PLUGINS
 
 %changelog
+* Tue Mar  3 2015 Michal Sekletar <msekleta@redhat.com> - 2.4.5-10
+- apply l2tp patch
+
+* Tue Mar  3 2015 Michal Sekletar <msekleta@redhat.com> - 2.4.5-9
+- fix segfault when using pppol2tp and dump option is given (#1197792)
+
+* Mon Feb  9 2015 Michal Sekletar <msekleta@redhat.com> - 2.4.5-8
+- prevent running into issues caused by undefined behavior (pointers of incompatible types aliasing the same object)
+
+* Wed Feb  4 2015 Michal Sekletar <msekleta@redhat.com> - 2.4.5-7
+- ignore unrecognised radiusclient configuration directives (#906912)
+- add missing l2tp support (#815128)
+
+* Tue Feb  3 2015 Michal Sekletar <msekleta@redhat.com> - 2.4.5-6
+- don't require logrotate (#922769)
+- move pppd database to /var/run/ppp to prevent SELinux AVCs (#968398)
+
 * Tue Mar 05 2010 Jiri Skala <jskala@redhat.com> 2.4.5-5
 - Resolves: #563207 - extended about removing duplicities in patches
 
